@@ -1,4 +1,5 @@
 import os
+import io
 from flask import Flask, render_template, request, send_file
 
 app = Flask(__name__)
@@ -9,33 +10,44 @@ def index():
 
 @app.route('/run-script', methods=['POST'])
 def run_script():
-    name_hi = request.form.get('name_hi')
-    name_eng = request.form.get('name_eng').strip().upper()
+    # Get inputs from the HTML form
+    name_hi = request.form.get('name_hi', '')
+    name_eng = request.form.get('name_eng', '').strip().upper()
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     source_path = os.path.join(script_dir, 'sample.txt')
-    output_filename = f"{name_eng}.mhtml"
-    output_path = os.path.join(script_dir, output_filename)
 
+    # 1. Verify template exists
     if not os.path.exists(source_path):
-        return "<h1>Error: sample.txt not found in the script folder.</h1>"
+        return "Error: sample.txt not found on the server."
 
     try:
-        # Read and Replace
+        # 2. Read template with UTF-8 encoding
         with open(source_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        content = content.replace("##NAMEHI##", name_hi).replace("##NAMEENG##", name_eng)
+        # 3. Perform the replacement
+        content = content.replace("##NAMEHI##", name_hi)
+        content = content.replace("##NAMEENG##", name_eng)
         
-        # Save temporary MHTML
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-            
-        # Send file to browser as a download
-        return send_file(output_path, as_attachment=True)
+        # 4. Convert to BytesIO (Memory Stream)
+        # This prevents the "blank file" issue by ensuring data is fully processed 
+        # before the download starts.
+        mem_file = io.BytesIO()
+        mem_file.write(content.encode('utf-8'))
+        mem_file.seek(0)
+
+        return send_file(
+            mem_file,
+            mimetype='application/x-mimearchive',
+            as_attachment=True,
+            download_name=f"{name_eng}.mhtml"
+        )
 
     except Exception as e:
-        return f"<h1>An error occurred:</h1><p>{e}</p>"
+        return f"Process Error: {str(e)}"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use environment variable for Port to ensure compatibility with Render/Railway
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
