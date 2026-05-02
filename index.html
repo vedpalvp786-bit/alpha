@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Update Server 3 V8.2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 650px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #444;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="date"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ced4da;
+            border-radius: 6px;
+            font-size: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        .address-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin: 20px 0;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .submit-btn:hover { background-color: #1557b0; }
+        
+        /* Preview & Download Styles */
+        .preview-section { margin-top: 30px; display: none; }
+        .download-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        /* Login Overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            width: 320px;
+        }
+        #loginError { color: #d93025; margin-top: 10px; display: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <h2 style="margin-top:0">Auth Required</h2>
+            <input type="password" id="loginPass" placeholder="Enter password" style="margin-bottom:15px">
+            <button onclick="checkPass()" class="submit-btn">Login</button>
+            <div id="loginError">Invalid Credentials</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Address Server V8.2 (Auto-Hindi)</h1>
+        
+        <form id="voterForm">
+            <!-- Name Row -->
+            <div class="row">
+                <div class="form-group">
+                    <label>Name (English):</label>
+                    <input type="text" id="nameEng" placeholder="Type name..." required>
+                </div>
+                <div class="form-group">
+                    <label>Name (Hindi - Editable):</label>
+                    <input type="text" id="nameHi" placeholder="नाम (हिंदी)" required>
+                </div>
+            </div>
+
+            <!-- Father Name Row -->
+            <div class="row">
+                <div class="form-group">
+                    <label>Father Name (English):</label>
+                    <input type="text" id="fatherEng" placeholder="Father's name..." required>
+                </div>
+                <div class="form-group">
+                    <label>Father Name (Hindi):</label>
+                    <input type="text" id="fatherHi" placeholder="पिता का नाम" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Date of Birth:</label>
+                    <input type="date" id="dob" required>
+                </div>
+                <div class="form-group">
+                    <label>Gender:</label>
+                    <select id="gender" required>
+                        <option value="">-- Select --</option>
+                        <option value="पुरुष / Male">पुरुष / Male</option>
+                        <option value="महिला / Female">महिला / Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Address Section -->
+            <div class="address-box">
+                <label>Select Saved Address:</label>
+                <select id="addrSelect" onchange="syncAddress(this.value)" style="margin-bottom:15px">
+                    <option value="">-- Select an area --</option>
+                </select>
+
+                <label>Address (English):</label>
+                <input type="text" id="addrEng" required style="margin-bottom:10px">
+                
+                <label>Address (Hindi):</label>
+                <input type="text" id="addrHi" required>
+            </div>
+
+            <button type="submit" class="submit-btn">Generate & Charge 190 Rs</button>
+        </form>
+
+        <div class="preview-section" id="previewSection">
+            <hr>
+            <button class="download-btn" onclick="downloadHTML()">Download Final HTML</button>
+            <iframe id="previewFrame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const addressDatabase = [
+            { eng: "Ghaziabad, Ghaziabad, Ghaziabad, Uttar Pradesh, 201001", hi: "गाजियाबाद, गाजियाबाद, गाजियाबाद, उत्तर प्रदेश, 201001" },
+            { eng: "Ghaziabad, Kavi Nagar, Ghaziabad, Uttar Pradesh, 201002", hi: "गाजियाबाद, कवि नगर, गाजियाबाद, उत्तर प्रदेश, 201002" },
+            { eng: "Ghaziabad, New Raj Nagar, Ghaziabad, Uttar Pradesh, 201002", hi: "गाजियाबाद, न्यू राज नगर, गाजियाबाद, उत्तर प्रदेश, 201002" },
+            { eng: "Hindon Air Field, Hindon Air Field, Ghaziabad, Uttar Pradesh, 201004", hi: "हिंदों एयर फील्ड, हिंदों एयर फील्ड, गाजियाबाद, उत्तर प्रदेश, 201004" },
+            { eng: "Chiranjiv Vihar, Kavi Nagar, Ghaziabad, Uttar Pradesh, 201002", hi: "चिरंजीव विहार, कवि नगर, गाजियाबाद, उत्तर प्रदेश, 201002" },
+            { eng: "Matiala, Sadarpur, Ghaziabad, Uttar Pradesh, 201002", hi: "मटियाला, सदरपुर, गाजियाबाद, उत्तर प्रदेश, 201002" },
+            { eng: "Lajpat Nagar, Sahibabad, Ghaziabad, Uttar Pradesh, 201005", hi: "लाजपत नगर, साहिबाबाद, गाजियाबाद, उत्तर प्रदेश, 201005" },
+            { eng: "Pasonda, Pasonda, Ghaziabad, Uttar Pradesh, 201005", hi: "पसोंडा, पसोंडा, गाजियाबाद, उत्तर प्रदेश, 201005" },
+            { eng: "Sahibabad, Sahibabad, Ghaziabad, Uttar Pradesh, 201005", hi: "साहिबाबाद, साहिबाबाद, गाजियाबाद, उत्तर प्रदेश, 201005" },
+            { eng: "Mohan Nagar, Mohan Nagar, Ghaziabad, Uttar Pradesh, 201007", hi: "मोहन नगर, मोहन नगर, गाजियाबाद, उत्तर प्रदेश, 201007" },
+            { eng: "Ghaziabad, Dundahera, Ghaziabad, Uttar Pradesh, 201009", hi: "गाजियाबाद, डुंडाहेरा, गाजियाबाद, उत्तर प्रदेश, 201009" },
+            { eng: "Ghaziabad City, Vijay Nagar, Ghaziabad, Uttar Pradesh, 201009", hi: "गाजियाबाद सिटी, विजय नगर, गाजियाबाद, उत्तर प्रदेश, 201009" },
+            { eng: "Sahabad Urf Mitthepur, Dundahera, Ghaziabad, Uttar Pradesh, 201009", hi: "सहाबाद उर्फ मिट्ठेपुर, डुंडाहेरा, गाजियाबाद, उत्तर प्रदेश, 201009" },
+            { eng: "Siddarth Vihar, Vijay Nagar, Ghaziabad, Uttar Pradesh, 201009", hi: "सिद्धार्थ विहार, विजय नगर, गाजियाबाद, उत्तर प्रदेश, 201009" },
+            { eng: "Chikamberpur, Chikamberpur, Ghaziabad, Uttar Pradesh, 201006", hi: "चिकम्बरपुर, चिकम्बरपुर, गाजियाबाद, उत्तर प्रदेश, 201006" },
+            { eng: "Koyal Enclave, Bhopura, Ghaziabad, Uttar Pradesh, 201006", hi: "कोयल एनक्लेव, भोपुरा, गाजियाबाद, उत्तर प्रदेश, 201006" },
+            { eng: "Sudamapuri, Vijay Nagar, Ghaziabad, Uttar Pradesh, 201009", hi: "सुदामापुरी, विजय नगर, गाजियाबाद, उत्तर प्रदेश, 201009" },
+            { eng: "Vijay Nagar, Ghaziabad City, Ghaziabad, Uttar Pradesh, 201009", hi: "विजय नगर, गाजियाबाद सिटी, गाजियाबाद, उत्तर प्रदेश, 201009" },
+            { eng: "I.E.Sahibabad, I.e.sahibabad, Ghaziabad, Uttar Pradesh, 201010", hi: "आई.ई.साहिबाबाद, आई.ई.साहिबाबाद, गाजियाबाद, उत्तर प्रदेश, 201010" },
+            { eng: "Chander Nagar, Chander Nagar, Ghaziabad, Uttar Pradesh, 201011", hi: "चंद्र नगर, चंद्र नगर, गाजियाबाद, उत्तर प्रदेश, 201011" },
+            { eng: "Vasundhra, Vasundhra, Ghaziabad, Uttar Pradesh, 201012", hi: "वसुंधरा, वसुंधरा, गाजियाबाद, उत्तर प्रदेश, 201012" },
+            { eng: "Govindpuram, Govindpuram, Ghaziabad, Uttar Pradesh, 201013", hi: "गोविंदपुरम, गोविंदपुरम, गाजियाबाद, उत्तर प्रदेश, 201013" },
+            { eng: "Indirapuram, Shipra Sun City, Ghaziabad, Uttar Pradesh, 201014", hi: "इंदिरापुरम, शिप्रा सुन सिटी, गाजियाबाद, उत्तर प्रदेश, 201014" },
+            { eng: "Shipra Sun City, Shipra Sun C, Ghaziabad, Uttar Pradesh, 201014", hi: "शिप्रा सुन सिटी, शिप्रा सुन सी, गाजियाबाद, उत्तर प्रदेश, 201014" },
+            { eng: "Masuri, Hindan Nagar, Ghaziabad, Uttar Pradesh, 201015", hi: "मसूरी, हिंदन नगर, गाजियाबाद, उत्तर प्रदेश, 201015" },
+            { eng: "Adhyatmic Nagar, Adhyatmic Nagar B.o, Ghaziabad, Uttar Pradesh, 201015", hi: "आध्यात्मिक नगर, आध्यात्मिक नगर बी.ओ, गाजियाबाद, उत्तर प्रदेश, 201015" },
+            { eng: "Masuri, Masuri, Ghaziabad, Uttar Pradesh, 201015", hi: "मसूरी, मसूरी, गाजियाबाद, उत्तर प्रदेश, 201015" },
+            { eng: "Ghaziabad, Crossing Republik, Ghaziabad, Uttar Pradesh, 201016", hi: "गाजियाबाद, क्रॉसिंग रिपब्लिक, गाजियाबाद, उत्तर प्रदेश, 201016" },
+            { eng: "Mainapur Village, Raj Nagar Extension, Ghaziabad, Uttar Pradesh, 201017", hi: "मैनापुर विलेज, राज नगर एक्सटेंशन, गाजियाबाद, उत्तर प्रदेश, 201017" },
+            { eng: "Raj Nagar Extension, Raj Nagar Extension, Ghaziabad, Uttar Pradesh, 201017", hi: "राज नगर एक्सटेंशन, राज नगर एक्सटेंशन, गाजियाबाद, उत्तर प्रदेश, 201017" },
+            { eng: "Vaishali, Vaishali, Ghaziabad, Uttar Pradesh, 201019", hi: "वैशाली, वैशाली, गाजियाबाद, उत्तर प्रदेश, 201019" },
+            { eng: "Khora, Khora S.o, Ghaziabad, Uttar Pradesh, 201020", hi: "खोरा, खोरा एस.ओ, गाजियाबाद, उत्तर प्रदेश, 201020" }
+        ];
+
+        // Init address dropdown
+        window.onload = function() {
+            const select = document.getElementById('addrSelect');
+            addressDatabase.forEach((item, index) => {
+                let opt = document.createElement('option');
+                opt.value = index;
+                opt.innerHTML = item.eng;
+                select.appendChild(opt);
+            });
+        };
+
+        function syncAddress(index) {
+            if(index === "") return;
+            document.getElementById('addrEng').value = addressDatabase[index].eng;
+            document.getElementById('addrHi').value = addressDatabase[index].hi;
+        }
+
+        // Auto-Hindi Transliteration via Google API
+        async function translateText(sourceText, targetId) {
+            if (!sourceText) return;
+            try {
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURI(sourceText)}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result && result[0]) {
+                    document.getElementById(targetId).value = result[0][0][0];
+                }
+            } catch (e) { console.error("Translation Error", e); }
+        }
+
+        // Event listeners for names
+        document.getElementById('nameEng').addEventListener('blur', function() {
+            translateText(this.value, 'nameHi');
+        });
+        document.getElementById('fatherEng').addEventListener('blur', function() {
+            translateText(this.value, 'fatherHi');
+        });
+
+        // Login Logic
+        function checkPass() {
+            var pass = document.getElementById('loginPass').value;
+            if (pass === '9899619804') {
+                document.getElementById('loginOverlay').style.display = 'none';
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // Form Submit
+        document.getElementById('voterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const dobParts = document.getElementById('dob').value.split('-');
+            const formattedDob = `${dobParts[2]}/${dobParts[1]}/${dobParts[0]}`;
+            const now = new Date();
+            const currDate = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+            const epic = String(Math.floor(1000000 + Math.random() * 9000000));
+
+            const fields = {
+                '##A##': epic,
+                '##B##': currDate,
+                '##C##': document.getElementById('nameHi').value,
+                '##D##': document.getElementById('nameEng').value,
+                '##E##': document.getElementById('fatherHi').value,
+                '##F##': document.getElementById('fatherEng').value,
+                '##G##': formattedDob,
+                '##H##': document.getElementById('addrHi').value,
+                '##I##': document.getElementById('addrEng').value,
+                '##J##': document.getElementById('gender').value
+            };
+
+            fetch('sample.html')
+                .then(res => res.text())
+                .then(html => {
+                    for (let key in fields) {
+                        let reg = new RegExp(key, 'g');
+                        html = html.replace(reg, fields[key]);
+                    }
+                    window.generatedHTML = html;
+                    document.getElementById('previewSection').style.display = 'block';
+                    document.getElementById('previewFrame').srcdoc = html;
+                })
+                .catch(err => alert("Error: Make sure 'sample.html' is in the same folder."));
+        });
+
+        function downloadHTML() {
+            if (!window.generatedHTML) return;
+            const blob = new Blob([window.generatedHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Voter_Card_Final.html';
+            a.click();
+        }
+    </script>
+</body>
+</html>
